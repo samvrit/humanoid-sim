@@ -1,29 +1,32 @@
-g_vector = [0 0 -9.81*0];  % [m/s^2]
+g_vector = [0 0 -9.81];  % [m/s^2]
 
-torso_z_init = 1.25;  % [m]
+origin_com_offset = 0.073481;  % [m]
+COM_init = [0.13, 0.25, 1.1037];
 
-theta1_init = 0;   % [deg]
-theta2_init = 20;  % [deg]
-theta3_init = -40; % [deg]
-theta4_init = 20;  % [deg]
-theta5_init = 0;   % [deg]
+torso_z_init = COM_init(3) - origin_com_offset;  % [m]
 
-right_theta1_init = 0;   % [deg]
-right_theta2_init = 20;  % [deg]
-right_theta3_init = -40; % [deg]
-right_theta4_init = 20;  % [deg]
-right_theta5_init = 0;   % [deg]
+theta_guess = deg2rad([0; 20; -40; 20; 0]);
 
-left_theta1_init = 0;   % [deg]
-left_theta2_init = 25;  % [deg]
-left_theta3_init = -50; % [deg]
-left_theta4_init = 25;  % [deg]
-left_theta5_init = 0;   % [deg]
+[theta_init, num_iterations] = inv_kinematics(COM_init(1), COM_init(2), COM_init(3), theta_guess(1), theta_guess(2), theta_guess(3), theta_guess(4), theta_guess(5), 'right');
 
-torso_desired_z = 1.2;
-torso_desired_x = 0.13;
-torso_desired_y = 0.0;
+w = 2*pi*0.5;
+t = 0:0.001:9.999;
 
-theta_new = inv_kinematics(torso_desired_x, torso_desired_y, torso_desired_z, deg2rad(theta1_init), deg2rad(theta2_init), deg2rad(theta3_init), deg2rad(theta4_init), deg2rad(theta5_init));
+COM_traj = COM_init(3) + 0.05 * sin(w*t);
 
-theta_new_deg = rad2deg(theta_new);
+joint_traj_right = theta_init .* ones(5, size(t, 2));
+joint_traj_left = theta_init .* ones(5, size(t, 2));
+
+num_iterations_right = zeros(1, size(t, 2));
+num_iterations_left = zeros(1, size(t, 2));
+
+joint_traj_right(:,1) = theta_init;
+joint_traj_left(:,1) = theta_init;
+
+for i = 2:size(COM_traj, 2)
+    [joint_traj_right(:,i), num_iterations_right(i)] = inv_kinematics(COM_init(1), COM_init(2), COM_traj(i), joint_traj_right(1,i-1), joint_traj_right(2,i-1), joint_traj_right(3,i-1), joint_traj_right(4,i-1), joint_traj_right(5,i-1), 'right');
+    [joint_traj_left(:,i), num_iterations_left(i)] = inv_kinematics(COM_init(1), -COM_init(2), COM_traj(i), joint_traj_left(1,i-1), joint_traj_left(2,i-1), joint_traj_left(3,i-1), joint_traj_left(4,i-1), joint_traj_left(5,i-1), 'left');
+end
+
+theta_right_timeseries = timeseries(joint_traj_right, t);
+theta_left_timeseries = timeseries(joint_traj_left, t);
