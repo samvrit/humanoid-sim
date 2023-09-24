@@ -1,6 +1,4 @@
-function [current_theta, num_iterations] = inv_kinematics(x, y, z, theta1_init, theta2_init, theta3_init, theta4_init, theta5_init, leg)
-    current_theta = [theta1_init; theta2_init; theta3_init; theta4_init; theta5_init];
-
+function [current_theta, num_iterations] = inv_kinematics(position, current_theta, leg)
     theta_prev = current_theta;
 
     max_error = 1;
@@ -8,7 +6,7 @@ function [current_theta, num_iterations] = inv_kinematics(x, y, z, theta1_init, 
     num_iterations = 0;
 
     while max_error > 0.0001
-        desired_task_space = [x; y; z; 0; 0; 0];
+        desired_task_space = [position(1); position(2); position(3); 0; 0; 0];
 
         T = forward_kinematics(current_theta(1), current_theta(2), current_theta(3), current_theta(4), current_theta(5), leg);
         [theta_x, theta_y, theta_z] = rotation_matrix_to_euler(T(1:3, 1:3));
